@@ -52,6 +52,24 @@ def discount_stack(
     return cache_mult * batch_mult
 
 
+def cache_is_worth_it(
+    avg_cache_reads: float,
+    write_cost_per_m: float,
+    read_discount: float = 0.10,
+) -> bool:
+    """Return whether repeated reads recover the normalized cache-write cost.
+
+    ``write_cost_per_m`` is expressed in units of one uncached input read for
+    the same million-token prefix.  Each cached read saves ``1-read_discount``
+    of that unit cost.  Keeping this decision explicit prevents reporting
+    cache savings when a prefix is read too rarely.
+    """
+    reads = max(0.0, float(avg_cache_reads))
+    write_cost = max(0.0, float(write_cost_per_m))
+    discount = min(1.0, max(0.0, float(read_discount)))
+    return reads * (1.0 - discount) > write_cost
+
+
 def break_even_utilization(discount_frac: float) -> float:
     """Utilization at which a commitment pays off ~= 1 - discount.
 

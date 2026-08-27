@@ -52,7 +52,14 @@ def run(verbose: bool = True) -> dict:
         "best_region": min(sustainability.REGION_CARBON, key=sustainability.REGION_CARBON.get),
     }
 
-    md = report.build_report(baseline, optimized, levers, sustainability=sust)
+    extensions = [
+        f"- **Cache economics:** observed equivalent cache reads = {r2['cache_avg_reads']:.2f}; cache is worthwhile = **{r2['cache_worth_it']}**.",
+        f"- **Reasoning budget:** reasoning traffic = {r2['reasoning_count']}/{r2['request_count']} requests ({r2['reasoning_pct']:.1f}%), costing ${r2['reasoning_cost']:.2f}/day ({r2['reasoning_cost_pct']:.1f}% of optimized cost) and {r2['reasoning_wh']:.1f} Wh/day; normal traffic costs ${r2['normal_cost']:.2f}/day and {r2['normal_wh']:.1f} Wh/day.",
+        f"- **10% reasoning policy simulation:** estimated cost = ${r2['reasoning_cap_cost']:.2f}/day, energy = {r2['reasoning_cap_wh']:.1f} Wh/day, modeled savings = {r2['reasoning_cap_savings_pct']:.1f}% versus current optimized routing.",
+        "- **GPU-Util lie mechanism:** high utilization can reflect memory stalls or kernel/launch overhead rather than useful tensor computation; MFU is therefore the better cost-efficiency signal. Prioritize right-sizing the two high-util, low-MFU GPUs before buying more capacity.",
+        "- **Sustainability action:** prioritize the cleanest region when latency permits, because lower energy/carbon intensity reduces both emissions and electricity exposure; re-check June-2026 rates before production decisions.",
+    ]
+    md = report.build_report(baseline, optimized, levers, sustainability=sust, extensions=extensions)
     out_md = os.path.join(ROOT, "outputs", "report.md")
     os.makedirs(os.path.dirname(out_md), exist_ok=True)
     with open(out_md, "w") as f:
